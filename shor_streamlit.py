@@ -18,6 +18,8 @@ import plotly.express as px
 from fractions import Fraction
 from math import gcd
 import warnings
+import seaborn as sns
+import pandas as pd
 warnings.filterwarnings('ignore')
 
 # Qiskit imports
@@ -750,70 +752,63 @@ class ShorAlgorithm:
             for i, instruction in enumerate(self.current_circuit.data):
                 st.write(f"{i+1}. {instruction.operation.name} on qubits {instruction.qubits}")
     
+
+
     def display_probabilities_streamlit(self):
         """Display measurement probabilities and analysis for Streamlit"""
         if self.measurement_results is None:
             return
-        
+
         st.subheader("📊 Probability Analysis")
-        
-        # Create two columns for the analysis
+
+        # Split layout into two columns
         col1, col2 = st.columns(2)
-        
+
+        # ===== Left Column: Top 10 Histogram =====
         with col1:
-            # Plot histogram of measurement results
-            bitstrings = list(self.measurement_results.keys())
-            counts = list(self.measurement_results.values())
-            
-            # Sort by count for better visualization
-            sorted_data = sorted(zip(bitstrings, counts), key=lambda x: x[1], reverse=True)
-            top_10 = sorted_data[:10]  # Show top 10 results
-            
-            if top_10:
-                bitstrings_top, counts_top = zip(*top_10)
-                
-                # Create plotly bar chart
-                fig = go.Figure(data=[
-                    go.Bar(
-                        x=list(bitstrings_top),
-                        y=list(counts_top),
-                        marker_color='skyblue',
-                        text=list(counts_top),
-                        textposition='auto',
-                    )
-                ])
-                
-                fig.update_layout(
-                    title="Top 10 Measurement Results",
-                    xaxis_title="Measurement Result (Binary)",
-                    yaxis_title="Count",
-                    width=400,
-                    height=400
-                )
-                
-                st.plotly_chart(fig, use_container_width=True)
-        
+            # Prepare data
+            data = (
+                pd.DataFrame({
+                    "bitstring": list(self.measurement_results.keys()),
+                    "count": list(self.measurement_results.values())
+                })
+                .sort_values("count", ascending=False)
+                .head(10)
+            )
+
+            # Plot using Seaborn
+            fig, ax = plt.subplots(figsize=(6, 4))
+            sns.barplot(x="bitstring", y="count", data=data, ax=ax, palette="Blues_d")
+            ax.set_title("Top 10 Measurement Results", fontsize=12, weight="bold")
+            ax.set_xlabel("Measurement Result (Binary)")
+            ax.set_ylabel("Count")
+            plt.xticks(rotation=45, ha='right')
+
+            # Display plot in Streamlit
+            st.pyplot(fig)
+
+        # ===== Right Column: Textual Analysis =====
         with col2:
-            # Analysis text
             total_shots = sum(self.measurement_results.values())
             most_common = max(self.measurement_results, key=self.measurement_results.get)
             most_common_count = self.measurement_results[most_common]
-            probability = most_common_count / total_shots
-            
+            probability = most_common_count / total_shots if total_shots > 0 else 0
+
             st.markdown(f"""
-            **Measurement Analysis:**
-            
-            **Total Shots:** {total_shots}  
-            **Most Common Result:** {most_common}  
-            **Count:** {most_common_count}  
+            ### 🧮 Measurement Analysis
+            **Total Shots:** {total_shots:,}  
+            **Most Common Result:** `{most_common}`  
+            **Count:** {most_common_count:,}  
             **Probability:** {probability:.3f}
-            
-            **Interpretation:**
-            • The measurement result represents a phase estimate
-            • Higher probability indicates better phase estimation
-            • This phase is used to find the period of the function
-            • The period is crucial for factorization
+
+            **Interpretation:**  
+            • The most frequent bitstring represents the likely phase estimate.  
+            • A higher probability suggests stronger phase confidence.  
+            • This phase contributes to determining the period of the function.  
+            • The identified period is crucial for **factorization** in Shor’s algorithm.
             """)
+
+
     
     def display_step_by_step_streamlit(self):
         """Display step-by-step calculation and explanation for Streamlit"""
@@ -1175,7 +1170,7 @@ def show_circuit_details():
 def show_mathematical_foundation():
     """Show mathematical foundation of the circuit"""
     
-    st.subheader("📐 Mathematical Foundation")
+    # st.subheader("📐 Mathematical Foundation")
     
     # Initialize Shor algorithm instance
     shor = ShorAlgorithm()
