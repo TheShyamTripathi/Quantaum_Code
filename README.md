@@ -1,7 +1,9 @@
-# 🧮 Shor’s Algorithm — Quantum Factorization Demo
+# 🧮 Shor’s Algorithm — Quantum Factorization
 
 **Author:** [Shyam Tripathi](https://github.com/TheShyamTripathi)
+
 **Repository:** [Quantum_Code](https://github.com/TheShyamTripathi/Quantaum_Code)
+
 **Deployed App:** [Streamlit Demo](https://shoralgorithmfactor.streamlit.app/)
 
 ---
